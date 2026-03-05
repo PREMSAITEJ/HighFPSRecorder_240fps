@@ -1,0 +1,121 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                     HIGHFPSRECORDER – QUICK START                            ║
+║                          3 WAYS TO RUN THE APP                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+📍 PROJECT LOCATION: /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 METHOD 1: ANDROID STUDIO (RECOMMENDED FOR BEGINNERS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Enable USB Debugging on S25+
+   → Settings → Developer Options → USB Debugging ON
+2. Connect S25+ via USB cable
+3. Open Android Studio
+   → File → Open → /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder
+4. Wait for Gradle sync (look for green checkmark)
+5. Click green "Run" button (or press Shift+F10)
+6. Select your S25+ from the device list
+7. App installs and launches automatically
+8. Grant camera/microphone permissions when prompted
+✅ TIME: 3-5 minutes | DIFFICULTY: Easy ⭐
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ METHOD 2: COMMAND LINE (FASTEST FOR DEVELOPERS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# One-liner:
+cd /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder && ./gradlew installDebug && adb shell am start -n com.example.highfps/.MainActivity
+# Or step-by-step:
+cd /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder
+./gradlew installDebug
+adb shell am start -n com.example.highfps/.MainActivity
+# View logs:
+adb logcat | grep HighFPS
+✅ TIME: 1-2 minutes | DIFFICULTY: Medium ⭐⭐
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 METHOD 3: BUILD APK (FOR DISTRIBUTION)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Build APK:
+cd /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder
+./gradlew assembleDebug
+# APK location:
+app/build/outputs/apk/debug/app-debug.apk
+# Install:
+adb install app/build/outputs/apk/debug/app-debug.apk
+# Launch:
+adb shell am start -n com.example.highfps/.MainActivity
+✅ TIME: 2-3 minutes | DIFFICULTY: Medium ⭐⭐
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 USING THE APP (AFTER INSTALLATION)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When app opens, you'll see:
+    ┌─────────────────────────────┐
+    │                             │
+    │   LIVE CAMERA PREVIEW       │
+    │   (back camera feed)        │
+    │                             │
+    ├─────────────────────────────┤
+    │                             │
+    │ [START 240FPS] [CAMERA INFO]│
+    │                             │
+    └─────────────────────────────┘
+STEP 1: Verify 240fps Support
+        → Tap "Camera Info" button
+        → Should show FPS ranges including [240, 240]
+        → ✅ Means your S25+ can record at 240fps
+STEP 2: Start Recording
+        → Tap "START 240FPS RECORDING" button
+        → Toast shows: "Recording: /path/to/output.mp4"
+        → Button changes to "STOP RECORDING"
+STEP 3: Stop Recording
+        → Tap "STOP RECORDING" button
+        → Toast shows: "Saved to: /path/to/output.mp4"
+        → File saved to app storage
+STEP 4: Verify Output (on Desktop)
+        → adb pull /storage/emulated/0/Android/data/com.example.highfps/files/ ~/Downloads/
+        → ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate ~/Downloads/output_*.mp4
+        → Should show: r_frame_rate=240/1 ✅
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚙️ TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ "Device not found"
+   → Run: adb devices
+   → Make sure USB Debugging is ON
+   → Reconnect USB cable
+❌ "Gradle sync failed"
+   → Check internet connection
+   → In Android Studio: File → Sync Now
+   → Or run: ./gradlew clean build
+❌ "Permission denied" when opening app
+   → Settings → Apps → HighFPSRecorder
+   → Permissions → Grant Camera and Microphone
+❌ "Recording shows 30fps instead of 240fps"
+   → Check "Camera Info" for device's maximum FPS
+   → Tap "Camera Info" to see what device supports
+   → Not all devices support 240fps (hardware limitation)
+❌ "Camera not ready" error
+   → Close other camera apps
+   → Grant camera permission
+   → Restart app
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 USEFUL COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Check device:           adb devices
+Clean build:            ./gradlew clean
+Build APK:              ./gradlew assembleDebug
+Install APK:            ./gradlew installDebug
+Launch app:             adb shell am start -n com.example.highfps/.MainActivity
+View logs:              adb logcat | grep HighFPS
+Download video:         adb pull /storage/emulated/0/Android/data/com.example.highfps/files/ ~/Downloads/
+Uninstall app:          adb uninstall com.example.highfps
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRE-RUN CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Before running, make sure:
+☐ S25+ connected via USB cable
+☐ USB debugging enabled (Settings → Developer Options)
+☐ Android Studio installed (for Method 1)
+☐ Internet connection available (for first Gradle sync)
+☐ Project folder exists at /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 RECOMMENDATION: Use METHOD 1 (Android Studio) for first run
+                   Use METHOD 2 (Command Line) for subsequent runs
+✅ STATUS: READY TO RUN! Pick your method above and start recording. 🚀
+═══════════════════════════════════════════════════════════════════════════════
