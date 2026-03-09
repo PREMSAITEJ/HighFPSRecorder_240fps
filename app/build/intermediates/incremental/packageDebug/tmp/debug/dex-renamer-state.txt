@@ -1,7 +1,7 @@
-#Fri Mar 06 18:00:58 IST 2026
-base.0=/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/build/intermediates/dex/debug/mergeExtDexDebug/classes.dex
-base.1=/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/build/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
-base.2=/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/build/intermediates/dex/debug/mergeProjectDexDebug/5/classes.dex
+#Mon Mar 09 18:40:06 IST 2026
+base.0=/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/build/intermediates/dex/debug/mergeExtDexDebug/classes.dex
+base.1=/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/build/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
+base.2=/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/build/intermediates/dex/debug/mergeProjectDexDebug/5/classes.dex
 path.0=classes.dex
 path.1=0/classes.dex
 path.2=5/classes.dex

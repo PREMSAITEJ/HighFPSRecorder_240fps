@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:2:1-35:12
-INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:2:1-35:12
-INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:2:1-35:12
-INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:2:1-35:12
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:2:1-35:12
+INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:2:1-35:12
+INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:2:1-35:12
+INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:2:1-35:12
 MERGED from [com.google.android.material:material:1.12.0] /home/fmea01/.gradle/caches/8.13/transforms/375bd453e1a715ef45c568d4b0b46521/transformed/material-1.12.0/AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.appcompat:appcompat-resources:1.7.0] /home/fmea01/.gradle/caches/8.13/transforms/aa58b78d93d88d677ff950e143fd6e10/transformed/appcompat-resources-1.7.0/AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] /home/fmea01/.gradle/caches/8.13/transforms/f179046f4f525c9b4418b30f5c504ee7/transformed/constraintlayout-2.0.1/AndroidManifest.xml:2:1-11:12
@@ -46,42 +46,42 @@ MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /home/f
 MERGED from [androidx.print:print:1.0.0] /home/fmea01/.gradle/caches/8.13/transforms/3420ee9bcc985541a2cc9e76873321db/transformed/print-1.0.0/AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.annotation:annotation-experimental:1.4.0] /home/fmea01/.gradle/caches/8.13/transforms/684467f454faec9bc5d1cf3cc883ec5b/transformed/annotation-experimental-1.4.0/AndroidManifest.xml:2:1-7:12
 	package
-		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml
+		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml
 	android:versionName
-		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml
+		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml
 	android:versionCode
-		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml
+		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml
 	xmlns:android
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:2:11-69
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:2:11-69
 uses-permission#android.permission.CAMERA
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:4:5-65
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:4:5-65
 	android:name
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:4:22-62
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:4:22-62
 uses-permission#android.permission.RECORD_AUDIO
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:5:5-71
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:5:5-71
 	android:name
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:5:22-68
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:5:22-68
 uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:6:5-8:38
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:6:5-8:38
 	android:maxSdkVersion
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:8:9-35
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:8:9-35
 	android:name
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:7:9-65
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:7:9-65
 uses-permission#android.permission.READ_EXTERNAL_STORAGE
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:9:5-11:38
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:9:5-11:38
 	android:maxSdkVersion
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:11:9-35
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:11:9-35
 	android:name
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:10:9-64
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:10:9-64
 uses-feature#android.hardware.camera.any
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:13:5-15:35
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:13:5-15:35
 	android:required
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:15:9-32
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:15:9-32
 	android:name
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:14:9-51
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:14:9-51
 application
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:17:5-33:19
-INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:17:5-33:19
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:17:5-33:19
+INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:17:5-33:19
 MERGED from [com.google.android.material:material:1.12.0] /home/fmea01/.gradle/caches/8.13/transforms/375bd453e1a715ef45c568d4b0b46521/transformed/material-1.12.0/AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.12.0] /home/fmea01/.gradle/caches/8.13/transforms/375bd453e1a715ef45c568d4b0b46521/transformed/material-1.12.0/AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] /home/fmea01/.gradle/caches/8.13/transforms/f179046f4f525c9b4418b30f5c504ee7/transformed/constraintlayout-2.0.1/AndroidManifest.xml:9:5-20
@@ -99,41 +99,41 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/fmea0
 MERGED from [androidx.startup:startup-runtime:1.1.1] /home/fmea01/.gradle/caches/8.13/transforms/d6a6609be3abdf8374b0266aed4c9246/transformed/startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
 MERGED from [androidx.startup:startup-runtime:1.1.1] /home/fmea01/.gradle/caches/8.13/transforms/d6a6609be3abdf8374b0266aed4c9246/transformed/startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
 	android:extractNativeLibs
-		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml
+		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.13.0] /home/fmea01/.gradle/caches/8.13/transforms/0a442df3b823586b7b45366d3f7198cf/transformed/core-1.13.0/AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:22:9-35
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:22:9-35
 	android:label
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:21:9-41
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:21:9-41
 	android:fullBackupContent
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:20:9-54
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:20:9-54
 	android:allowBackup
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:18:9-35
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:18:9-35
 	android:theme
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:23:9-53
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:23:9-53
 	android:dataExtractionRules
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:19:9-65
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:19:9-65
 activity#com.example.highfps.MainActivity
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:24:9-32:20
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:24:9-32:20
 	android:exported
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:26:13-36
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:26:13-36
 	android:name
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:25:13-41
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:25:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:27:13-31:29
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:27:13-31:29
 action#android.intent.action.MAIN
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:28:17-69
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:28:17-69
 	android:name
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:28:25-66
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:28:25-66
 category#android.intent.category.LAUNCHER
-ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:30:17-77
+ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:30:17-77
 	android:name
-		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml:30:27-74
+		ADDED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml:30:27-74
 uses-sdk
-INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
-INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml
-INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml
+INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml
+INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml
 MERGED from [com.google.android.material:material:1.12.0] /home/fmea01/.gradle/caches/8.13/transforms/375bd453e1a715ef45c568d4b0b46521/transformed/material-1.12.0/AndroidManifest.xml:20:5-44
 MERGED from [com.google.android.material:material:1.12.0] /home/fmea01/.gradle/caches/8.13/transforms/375bd453e1a715ef45c568d4b0b46521/transformed/material-1.12.0/AndroidManifest.xml:20:5-44
 MERGED from [androidx.appcompat:appcompat-resources:1.7.0] /home/fmea01/.gradle/caches/8.13/transforms/aa58b78d93d88d677ff950e143fd6e10/transformed/appcompat-resources-1.7.0/AndroidManifest.xml:5:5-44
@@ -217,9 +217,9 @@ MERGED from [androidx.print:print:1.0.0] /home/fmea01/.gradle/caches/8.13/transf
 MERGED from [androidx.annotation:annotation-experimental:1.4.0] /home/fmea01/.gradle/caches/8.13/transforms/684467f454faec9bc5d1cf3cc883ec5b/transformed/annotation-experimental-1.4.0/AndroidManifest.xml:5:5-44
 MERGED from [androidx.annotation:annotation-experimental:1.4.0] /home/fmea01/.gradle/caches/8.13/transforms/684467f454faec9bc5d1cf3cc883ec5b/transformed/annotation-experimental-1.4.0/AndroidManifest.xml:5:5-44
 	android:targetSdkVersion
-		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml
+		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder/app/src/main/AndroidManifest.xml
+		INJECTED from /home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/AndroidManifest.xml
 provider#androidx.startup.InitializationProvider
 ADDED from [androidx.emoji2:emoji2:1.3.0] /home/fmea01/.gradle/caches/8.13/transforms/957712a3dad3fddbc6d0281791ca548c/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
 MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] /home/fmea01/.gradle/caches/8.13/transforms/373767f4b1c1e9e2b89adf3a94391966/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:24:9-32:20

@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private String activeCameraId;
     private Range<Integer> activeFpsRange;
     private volatile boolean isRecording;
+    private boolean pendingStartRecording;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
-                // Surface ready for camera preview
+                startCameraPreviewIfReady();
             }
 
             @Override
@@ -90,6 +91,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
+                closeCameraObjects();
+                stopCameraThread();
+                stopFrameThread();
                 return true;
             }
 
@@ -97,6 +101,18 @@ public class MainActivity extends AppCompatActivity {
             public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
             }
         });
+
+        if (textureView.isAvailable()) {
+            startCameraPreviewIfReady();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (textureView.isAvailable()) {
+            startCameraPreviewIfReady();
+        }
     }
 
     private void startRecording() {
@@ -105,7 +121,61 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!hasRequiredPermissions()) {
+            pendingStartRecording = true;
             ActivityCompat.requestPermissions(this, getRequiredPermissions(), REQUEST_CODE_PERMISSIONS);
+            return;
+        }
+
+        if (cameraDevice == null) {
+            pendingStartRecording = true;
+            startCameraPreviewIfReady();
+            return;
+        }
+
+        configureRecordingSession();
+    }
+
+    private void stopRecording() {
+        if (!isRecording) {
+            return;
+        }
+
+        isRecording = false;
+        pendingStartRecording = false;
+        stopFrameCountUpdates();
+        setRecordingUiState(false);
+
+        int total = frameSaver != null ? frameSaver.getFrameCount() : 0;
+        String message = "Recording stopped. Total frames dumped: " + total;
+        Log.i(TAG, message);
+        showToastOnUiThread(message);
+        if (frameSaver != null) {
+            showToastOnUiThread("Saved to: " + frameSaver.getSessionDir().getAbsolutePath());
+        }
+        frameSaver = null;
+
+        closeImageReader();
+        if (cameraDevice != null) {
+            startPreviewSession();
+        }
+    }
+
+    private void startCameraPreviewIfReady() {
+        if (!textureView.isAvailable()) {
+            return;
+        }
+
+        if (!hasRequiredPermissions()) {
+            ActivityCompat.requestPermissions(this, getRequiredPermissions(), REQUEST_CODE_PERMISSIONS);
+            return;
+        }
+
+        if (cameraDevice != null) {
+            if (pendingStartRecording) {
+                configureRecordingSession();
+            } else if (captureSession == null || !isRecording) {
+                startPreviewSession();
+            }
             return;
         }
 
@@ -117,7 +187,6 @@ public class MainActivity extends AppCompatActivity {
             CameraSelection selection = selectCamera(manager);
             activeCameraId = selection.cameraId;
             activeFpsRange = selection.fpsRange;
-            frameSaver = new FrameSaver(this);
 
             Log.i(TAG, "Selected camera=" + activeCameraId + ", fpsRange=" + activeFpsRange);
 
@@ -127,42 +196,11 @@ public class MainActivity extends AppCompatActivity {
             }
             manager.openCamera(activeCameraId, cameraStateCallback, cameraHandler);
         } catch (Exception e) {
-            Log.e(TAG, "Unable to start recording", e);
-            Toast.makeText(this, "Start failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Unable to open camera preview", e);
+            Toast.makeText(this, "Camera open failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            closeCameraObjects();
             stopCameraThread();
             stopFrameThread();
-        }
-    }
-
-    private void stopRecording() {
-        if (!isRecording) {
-            return;
-        }
-
-        isRecording = false;
-        stopFrameCountUpdates();
-
-        try {
-            if (captureSession != null) {
-                captureSession.stopRepeating();
-                captureSession.abortCaptures();
-            }
-        } catch (CameraAccessException e) {
-            Log.w(TAG, "Unable to stop capture cleanly", e);
-        }
-
-        closeCameraObjects();
-        stopCameraThread();
-        stopFrameThread();
-
-        setRecordingUiState(false);
-
-        int total = frameSaver != null ? frameSaver.getFrameCount() : 0;
-        String message = "Recording stopped. Total frames dumped: " + total;
-        Log.i(TAG, message);
-        showToastOnUiThread(message);
-        if (frameSaver != null) {
-            showToastOnUiThread("Saved to: " + frameSaver.getSessionDir().getAbsolutePath());
         }
     }
 
@@ -190,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
         if (fpsRanges != null) {
             for (Range<Integer> range : fpsRanges) {
                 Log.d(TAG, "Supported FPS range: " + range);
-                ranges.add(new int[] {range.getLower(), range.getUpper()});
+                ranges.add(new int[]{range.getLower(), range.getUpper()});
             }
         }
 
@@ -199,8 +237,64 @@ public class MainActivity extends AppCompatActivity {
         return new CameraSelection(selectedId, selectedRange);
     }
 
-    private void startFrameCapture() {
+    private void startPreviewSession() {
         try {
+            if (cameraDevice == null) {
+                return;
+            }
+
+            Surface previewSurface = getPreviewSurface();
+            if (previewSurface == null) {
+                return;
+            }
+
+            closeImageReader();
+
+            CaptureRequest.Builder builder =
+                    cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            builder.addTarget(previewSurface);
+
+            cameraDevice.createCaptureSession(
+                    Arrays.asList(previewSurface),
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(@NonNull CameraCaptureSession session) {
+                            captureSession = session;
+                            try {
+                                session.setRepeatingRequest(builder.build(), null, cameraHandler);
+                                if (pendingStartRecording) {
+                                    configureRecordingSession();
+                                }
+                            } catch (CameraAccessException e) {
+                                Log.e(TAG, "Unable to start preview", e);
+                                showToastOnUiThread("Preview start failed");
+                                closeCameraObjects();
+                            }
+                        }
+
+                        @Override
+                        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                            showToastOnUiThread("Preview session config failed");
+                            closeCameraObjects();
+                        }
+                    },
+                    cameraHandler
+            );
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to configure preview session", e);
+            Toast.makeText(this, "Preview setup failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            closeCameraObjects();
+        }
+    }
+
+    private void configureRecordingSession() {
+        try {
+            if (cameraDevice == null || frameHandler == null) {
+                pendingStartRecording = true;
+                return;
+            }
+
+            closeImageReader();
             imageReader = ImageReader.newInstance(
                     CAPTURE_WIDTH,
                     CAPTURE_HEIGHT,
@@ -222,17 +316,14 @@ public class MainActivity extends AppCompatActivity {
                 frameHandler.post(() -> frameSaver.saveFrame(image));
             }, cameraHandler);
 
-            // Get preview surface
-            SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
-            if (surfaceTexture == null) {
-                Log.e(TAG, "SurfaceTexture not ready");
+            Surface previewSurface = getPreviewSurface();
+            if (previewSurface == null) {
                 return;
             }
-            surfaceTexture.setDefaultBufferSize(CAPTURE_WIDTH, CAPTURE_HEIGHT);
-            Surface previewSurface = new Surface(surfaceTexture);
             Surface readerSurface = imageReader.getSurface();
 
-            CaptureRequest.Builder builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            CaptureRequest.Builder builder =
+                    cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
             builder.addTarget(previewSurface);
             builder.addTarget(readerSurface);
             builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, activeFpsRange);
@@ -244,8 +335,10 @@ public class MainActivity extends AppCompatActivity {
                         public void onConfigured(@NonNull CameraCaptureSession session) {
                             captureSession = session;
                             try {
+                                frameSaver = new FrameSaver(MainActivity.this);
                                 session.setRepeatingRequest(builder.build(), null, cameraHandler);
                                 isRecording = true;
+                                pendingStartRecording = false;
                                 setRecordingUiState(true);
                                 showToastOnUiThread("Recording started at " + activeFpsRange);
                                 startFrameCountUpdates();
@@ -271,11 +364,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private Surface getPreviewSurface() {
+        SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
+        if (surfaceTexture == null) {
+            Log.e(TAG, "SurfaceTexture not ready");
+            return null;
+        }
+        surfaceTexture.setDefaultBufferSize(CAPTURE_WIDTH, CAPTURE_HEIGHT);
+        return new Surface(surfaceTexture);
+    }
+
     private final CameraDevice.StateCallback cameraStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
             cameraDevice = camera;
-            startFrameCapture();
+            if (pendingStartRecording) {
+                configureRecordingSession();
+            } else {
+                startPreviewSession();
+            }
         }
 
         @Override
@@ -296,6 +403,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             btnRecord.setEnabled(!recording);
             btnStop.setEnabled(recording);
+            tvFrameCount.setVisibility(recording ? TextView.VISIBLE : TextView.GONE);
             if (!recording) {
                 tvFrameCount.setText("Frames: 0");
             }
@@ -306,13 +414,13 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
     }
 
-    private Runnable frameCountUpdater = new Runnable() {
+    private final Runnable frameCountUpdater = new Runnable() {
         @Override
         public void run() {
             if (isRecording && frameSaver != null) {
                 int count = frameSaver.getFrameCount();
                 tvFrameCount.setText("Frames: " + count);
-                uiHandler.postDelayed(this, 100); // Update every 100ms
+                uiHandler.postDelayed(this, 100);
             }
         }
     };
@@ -354,11 +462,17 @@ public class MainActivity extends AppCompatActivity {
 
         for (int grantResult : grantResults) {
             if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                pendingStartRecording = false;
                 Toast.makeText(this, "Permissions are required", Toast.LENGTH_LONG).show();
                 return;
             }
         }
-        startRecording();
+
+        if (pendingStartRecording) {
+            startRecording();
+        } else {
+            startCameraPreviewIfReady();
+        }
     }
 
     private void closeCameraObjects() {
@@ -366,13 +480,17 @@ public class MainActivity extends AppCompatActivity {
             captureSession.close();
             captureSession = null;
         }
-        if (imageReader != null) {
-            imageReader.close();
-            imageReader = null;
-        }
+        closeImageReader();
         if (cameraDevice != null) {
             cameraDevice.close();
             cameraDevice = null;
+        }
+    }
+
+    private void closeImageReader() {
+        if (imageReader != null) {
+            imageReader.close();
+            imageReader = null;
         }
     }
 
@@ -424,14 +542,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        if (isRecording) {
-            stopRecording();
-        } else {
-            closeCameraObjects();
-            stopCameraThread();
-            stopFrameThread();
-        }
         super.onPause();
+        isRecording = false;
+        pendingStartRecording = false;
+        stopFrameCountUpdates();
+        setRecordingUiState(false);
+        frameSaver = null;
+        closeCameraObjects();
+        stopCameraThread();
+        stopFrameThread();
     }
 
     private static class CameraSelection {
@@ -444,4 +563,3 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 }
-
