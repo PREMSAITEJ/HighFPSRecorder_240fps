@@ -22,28 +22,30 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class FrameSaver {
     private static final String TAG = "FrameSaver";
+    private static final String FRAMES_FOLDER = "frames";
 
-    private final File sessionDir;
+    private final Context appContext;
     private final AtomicInteger frameCount;
+    private final File sessionDir;
 
     public FrameSaver(Context context) {
+        this.appContext = context.getApplicationContext();
         this.frameCount = new AtomicInteger(0);
-
-        // Use app external files root: /storage/emulated/0/Android/data/<package>/files/
-        File baseDir = context.getExternalFilesDir(null);
-        if (baseDir == null) {
-            throw new IllegalStateException("External files directory is not available");
-        }
-
-        // Create session directory
         String sessionName = "session_" +
                 new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-        sessionDir = new File(baseDir, sessionName);
-
-        if (!sessionDir.exists()) {
-            sessionDir.mkdirs();
-            Log.d(TAG, "Session folder created: " + sessionDir.getAbsolutePath());
+        File[] mediaDirs = this.appContext.getExternalMediaDirs();
+        if (mediaDirs == null || mediaDirs.length == 0 || mediaDirs[0] == null) {
+            throw new IllegalStateException("External media directory is not available");
         }
+
+        File baseDir = mediaDirs[0];
+        sessionDir = new File(baseDir, FRAMES_FOLDER + File.separator + sessionName);
+
+        if (!sessionDir.exists() && !sessionDir.mkdirs()) {
+            throw new IllegalStateException("Failed to create session directory: " + sessionDir.getAbsolutePath());
+        }
+
+        Log.d(TAG, "Session folder target: " + sessionDir.getAbsolutePath());
     }
 
     /**
@@ -70,10 +72,8 @@ public class FrameSaver {
                     timestamp
             );
 
-            File outputFile = new File(sessionDir, filename);
-
             // Save as TIFF
-            boolean savedSuccess = saveBitmapAsRawTiff(bitmap, outputFile);
+            boolean savedSuccess = saveBitmapAsRawTiff(bitmap, filename);
 
             if (savedSuccess) {
                 Log.d(TAG, "Frame " + frameIndex + " saved: " + filename);
@@ -123,7 +123,9 @@ public class FrameSaver {
     /**
      * Save bitmap as a raw TIFF file.
      */
-    private boolean saveBitmapAsRawTiff(Bitmap bitmap, File outputFile) {
+    private boolean saveBitmapAsRawTiff(Bitmap bitmap, String filename) {
+        File outputFile = new File(sessionDir, filename);
+
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
             int width = bitmap.getWidth();
             int height = bitmap.getHeight();
@@ -133,7 +135,7 @@ public class FrameSaver {
             // Write minimal TIFF header
             writeTiffHeader(fos, width, height, pixelData);
 
-            Log.d(TAG, "Bitmap saved as TIFF: " + outputFile.getName());
+            Log.d(TAG, "Bitmap saved as TIFF: " + outputFile.getAbsolutePath());
             return true;
 
         } catch (IOException e) {
@@ -230,7 +232,7 @@ public class FrameSaver {
     /**
      * Get the session directory path.
      */
-    public File getSessionDir() {
-        return sessionDir;
+    public String getSessionPath() {
+        return sessionDir.getAbsolutePath();
     }
 }

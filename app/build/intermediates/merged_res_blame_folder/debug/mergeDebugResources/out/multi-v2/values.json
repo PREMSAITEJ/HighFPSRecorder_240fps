@@ -4,6 +4,23 @@
             "outputFile": "com.example.highfps.app-mergeDebugResources-29:/values/values.xml",
             "map": [
                 {
+                    "source": "/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/reverted commit/app/src/main/res/values/colors.xml",
+                    "from": {
+                        "startLines": "1,2",
+                        "startColumns": "4,4",
+                        "startOffsets": "16,58",
+                        "endColumns": "41,41",
+                        "endOffsets": "53,95"
+                    },
+                    "to": {
+                        "startLines": "561,880",
+                        "startColumns": "4,4",
+                        "startOffsets": "29207,52883",
+                        "endColumns": "41,41",
+                        "endOffsets": "29244,52920"
+                    }
+                },
+                {
                     "source": "/home/fmea01/.gradle/caches/8.13/transforms/e5ae66fe9f4fee57533e2a06a3204c54/transformed/lifecycle-runtime-2.6.2/res/values/values.xml",
                     "from": {
                         "startLines": "2",
@@ -57,40 +74,6 @@
                     }
                 },
                 {
-                    "source": "/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/res/values/colors.xml",
-                    "from": {
-                        "startLines": "1,2",
-                        "startColumns": "4,4",
-                        "startOffsets": "16,58",
-                        "endColumns": "41,41",
-                        "endOffsets": "53,95"
-                    },
-                    "to": {
-                        "startLines": "561,880",
-                        "startColumns": "4,4",
-                        "startOffsets": "29207,52883",
-                        "endColumns": "41,41",
-                        "endOffsets": "29244,52920"
-                    }
-                },
-                {
-                    "source": "/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/res/values/strings.xml",
-                    "from": {
-                        "startLines": "1,2,3",
-                        "startColumns": "4,4,4",
-                        "startOffsets": "16,69,129",
-                        "endColumns": "52,59,57",
-                        "endOffsets": "64,124,182"
-                    },
-                    "to": {
-                        "startLines": "1898,2046,2048",
-                        "startColumns": "4,4,4",
-                        "startOffsets": "127346,147744,147875",
-                        "endColumns": "52,59,57",
-                        "endOffsets": "127394,147799,147928"
-                    }
-                },
-                {
                     "source": "/home/fmea01/.gradle/caches/8.13/transforms/b8b6d42c6730402ebe1ed69b252eb7e4/transformed/cardview-1.0.0/res/values/values.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,35,36,37,38,45,47,50,7",
@@ -107,6 +90,42 @@
                         "endLines": "26,572,573,574,575,963,964,965,2102,5452,5455,5458,10168",
                         "endColumns": "51,60,61,61,63,58,56,53,12,12,12,12,24",
                         "endOffsets": "1301,30077,30139,30201,30265,58493,58550,58604,151654,385584,385710,385838,672801"
+                    }
+                },
+                {
+                    "source": "/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/reverted commit/app/src/main/res/values/strings.xml",
+                    "from": {
+                        "startLines": "1,2,3",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "16,69,129",
+                        "endColumns": "52,59,57",
+                        "endOffsets": "64,124,182"
+                    },
+                    "to": {
+                        "startLines": "1898,2046,2048",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "127346,147744,147875",
+                        "endColumns": "52,59,57",
+                        "endOffsets": "127394,147799,147928"
+                    }
+                },
+                {
+                    "source": "/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/reverted commit/app/src/main/res/values/themes.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "4",
+                        "startOffsets": "16",
+                        "endLines": "4",
+                        "endColumns": "12",
+                        "endOffsets": "265"
+                    },
+                    "to": {
+                        "startLines": "6314",
+                        "startColumns": "4",
+                        "startOffsets": "443829",
+                        "endLines": "6317",
+                        "endColumns": "12",
+                        "endOffsets": "444078"
                     }
                 },
                 {
@@ -272,25 +291,6 @@
                         "endLines": "94,9168,10537,10621",
                         "endColumns": "60,12,24,24",
                         "endOffsets": "5072,638325,697678,702194"
-                    }
-                },
-                {
-                    "source": "/home/fmea01/Downloads/PREMSAITEJA/HighFPSRecorder_240fps/app/src/main/res/values/themes.xml",
-                    "from": {
-                        "startLines": "1",
-                        "startColumns": "4",
-                        "startOffsets": "16",
-                        "endLines": "4",
-                        "endColumns": "12",
-                        "endOffsets": "265"
-                    },
-                    "to": {
-                        "startLines": "6314",
-                        "startColumns": "4",
-                        "startOffsets": "443829",
-                        "endLines": "6317",
-                        "endColumns": "12",
-                        "endOffsets": "444078"
                     }
                 },
                 {

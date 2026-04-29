@@ -40,7 +40,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int DESIRED_FPS = 240;
     private static final int CAPTURE_WIDTH = 1920;
     private static final int CAPTURE_HEIGHT = 1080;
-    private static final int IMAGE_READER_BUFFER = 10;
+    private static final int IMAGE_READER_BUFFER = 50;
+    private static final int BUFFER_THRESHOLD = 40;
 
     private Button btnRecord;
     private Button btnStop;
@@ -62,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
     private Range<Integer> activeFpsRange;
     private volatile boolean isRecording;
     private boolean pendingStartRecording;
+    private volatile int pendingFrameCount = 0;
+    private volatile long droppedFrameCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,16 +148,21 @@ public class MainActivity extends AppCompatActivity {
         stopFrameCountUpdates();
         setRecordingUiState(false);
 
+        stopAndCloseCaptureSession();
+        closeImageReader();
+
         int total = frameSaver != null ? frameSaver.getFrameCount() : 0;
         String message = "Recording stopped. Total frames dumped: " + total;
+        if (droppedFrameCount > 0) {
+            message += " (Dropped: " + droppedFrameCount + ")";
+        }
         Log.i(TAG, message);
         showToastOnUiThread(message);
         if (frameSaver != null) {
-            showToastOnUiThread("Saved to: " + frameSaver.getSessionDir().getAbsolutePath());
+            showToastOnUiThread("Saved to: " + frameSaver.getSessionPath());
         }
         frameSaver = null;
 
-        closeImageReader();
         if (cameraDevice != null) {
             startPreviewSession();
         }
@@ -294,6 +302,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
+            stopAndCloseCaptureSession();
             closeImageReader();
             imageReader = ImageReader.newInstance(
                     CAPTURE_WIDTH,
@@ -303,7 +312,15 @@ public class MainActivity extends AppCompatActivity {
             );
 
             imageReader.setOnImageAvailableListener(reader -> {
-                Image image = reader.acquireNextImage();
+                Image image;
+                try {
+                    image = reader.acquireNextImage();
+                } catch (IllegalStateException e) {
+                    Log.w(TAG, "ImageReader buffer overflow, dropping frame. Pending: " + pendingFrameCount);
+                    droppedFrameCount++;
+                    return;
+                }
+
                 if (image == null) {
                     return;
                 }
@@ -313,7 +330,21 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                frameHandler.post(() -> frameSaver.saveFrame(image));
+                if (pendingFrameCount >= BUFFER_THRESHOLD) {
+                    Log.w(TAG, "Frame queue near capacity (" + pendingFrameCount + "/" + IMAGE_READER_BUFFER + "), dropping frame");
+                    image.close();
+                    droppedFrameCount++;
+                    return;
+                }
+
+                pendingFrameCount++;
+                frameHandler.post(() -> {
+                    try {
+                        frameSaver.saveFrame(image);
+                    } finally {
+                        pendingFrameCount--;
+                    }
+                });
             }, cameraHandler);
 
             Surface previewSurface = getPreviewSurface();
@@ -336,6 +367,8 @@ public class MainActivity extends AppCompatActivity {
                             captureSession = session;
                             try {
                                 frameSaver = new FrameSaver(MainActivity.this);
+                                pendingFrameCount = 0;
+                                droppedFrameCount = 0;
                                 session.setRepeatingRequest(builder.build(), null, cameraHandler);
                                 isRecording = true;
                                 pendingStartRecording = false;
@@ -476,10 +509,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void closeCameraObjects() {
-        if (captureSession != null) {
-            captureSession.close();
-            captureSession = null;
-        }
+        stopAndCloseCaptureSession();
         closeImageReader();
         if (cameraDevice != null) {
             cameraDevice.close();
@@ -487,8 +517,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void stopAndCloseCaptureSession() {
+        if (captureSession != null) {
+            try {
+                captureSession.stopRepeating();
+            } catch (Exception e) {
+                Log.w(TAG, "Unable to stop repeating request cleanly", e);
+            }
+            try {
+                captureSession.abortCaptures();
+            } catch (Exception e) {
+                Log.w(TAG, "Unable to abort in-flight captures cleanly", e);
+            }
+            captureSession.close();
+            captureSession = null;
+        }
+    }
+
     private void closeImageReader() {
         if (imageReader != null) {
+            imageReader.setOnImageAvailableListener(null, null);
             imageReader.close();
             imageReader = null;
         }
