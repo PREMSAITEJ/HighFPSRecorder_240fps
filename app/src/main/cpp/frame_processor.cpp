@@ -1,13 +1,12 @@
 #include "frame_processor.h"
 #include "frame_buffer.h"
 #include "tiff_encoder.h"
-#include "stride_corrector.h"
 #include <android/log.h>
 #include <chrono>
 #include <cstring>
 #include <sstream>
 
-#define LOG_TAG "HighFPS-NDK"
+#define LOG_TAG "HighFPS-RawFrames"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -15,8 +14,8 @@
 FrameProcessor::FrameProcessor(int width, int height, const char* output_dir)
     : width_(width), height_(height), output_dir_(output_dir),
       is_capturing_(false), frame_count_(0), dropped_frames_(0), error_count_(0) {
-    LOGD("FrameProcessor initialized: %dx%d → %s", width, height, output_dir);
-    frame_buffer_ = std::make_unique<FrameBuffer>(width * height + 1024);
+    LOGD("FrameProcessor init: %dx%d Y-plane → %s", width, height, output_dir);
+    frame_buffer_ = std::make_unique<FrameBuffer>(width * height);  // Y-plane only
     tiff_encoder_ = std::make_unique<TIFFEncoder>(width, height, output_dir);
 }
 
@@ -32,7 +31,7 @@ void FrameProcessor::start_capturing() {
         return;
     }
 
-    LOGD("Starting capture with %d encoder threads", NUM_ENCODER_THREADS);
+    LOGD("Starting RAW frame capture with %d encoder threads", NUM_ENCODER_THREADS);
 
     // Launch encoder threads
     for (int i = 0; i < NUM_ENCODER_THREADS; ++i) {
@@ -45,7 +44,7 @@ void FrameProcessor::stop_capturing() {
         return;
     }
 
-    LOGD("Stopping capture...");
+    LOGD("Stopping RAW frame capture...");
     queue_cv_.notify_all();
 
     // Wait for encoder threads
@@ -56,7 +55,7 @@ void FrameProcessor::stop_capturing() {
     }
     encoder_threads_.clear();
 
-    LOGD("Capture stopped. Final stats: %llu frames, %llu dropped, %llu errors",
+    LOGD("Capture stopped. Final: %llu frames, %llu dropped, %llu errors",
          frame_count_.load(), dropped_frames_.load(), error_count_.load());
 }
 
@@ -64,24 +63,24 @@ bool FrameProcessor::is_capturing() const {
     return is_capturing_.load();
 }
 
-void FrameProcessor::on_frame_available(AImage* image) {
+void FrameProcessor::process_raw_yplane(const uint8_t* y_data, int pixel_stride, int row_pitch) {
     if (!is_capturing_.load()) {
-        AImage_delete(image);
         return;
     }
 
-    // Acquire grayscale buffer from frame buffer
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // Acquire buffer
     uint8_t* gray_buffer = frame_buffer_->acquire_buffer();
     if (!gray_buffer) {
         LOGW("Failed to acquire frame buffer");
-        AImage_delete(image);
         dropped_frames_++;
         return;
     }
 
-    // Process frame
-    auto start = std::chrono::high_resolution_clock::now();
-    process_frame_internal(image, gray_buffer);
+    // Correct stride from camera sensor
+    correct_stride(y_data, row_pitch, gray_buffer, width_, height_);
+
     auto end = std::chrono::high_resolution_clock::now();
     double ms = std::chrono::duration<double, std::milli>(end - start).count();
 
@@ -94,56 +93,13 @@ void FrameProcessor::on_frame_available(AImage* image) {
         }
     }
 
-    // Queue for encoding
+    // Queue for TIFF encoding
     uint64_t frame_num = frame_count_++;
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
         if (frame_queue_.size() >= MAX_QUEUE_SIZE) {
-            LOGW("Frame queue full, dropping frame %llu", frame_num);
-            frame_buffer_->release_buffer(gray_buffer);
-            dropped_frames_++;
-        } else {
-            frame_queue_.push({gray_buffer, frame_num});
-            queue_cv_.notify_one();
-        }
-    }
-
-    AImage_delete(image);
-}
-
-void FrameProcessor::process_frame(AImage* image) {
-    uint8_t* gray_buffer = frame_buffer_->acquire_buffer();
-    if (!gray_buffer) {
-        LOGW("Failed to acquire frame buffer");
-        dropped_frames_++;
-        return;
-    }
-
-    // Extract Y-plane (luminance)
-    uint8_t* y_plane = nullptr;
-    int y_size = 0;
-    int y_stride = 0;
-
-    int status = AImage_getPlaneData(image, 0, &y_plane, &y_size);
-    if (status != AMEDIA_OK) {
-        LOGE("Failed to get Y-plane: %d", status);
-        frame_buffer_->release_buffer(gray_buffer);
-        error_count_++;
-        return;
-    }
-
-    AImage_getPlaneRowPitch(image, 0, &y_stride);
-
-    // Correct stride for Samsung memory alignment
-    StrideCorrector corrector;
-    corrector.correct_stride(y_plane, y_stride, gray_buffer, width_, height_);
-
-    // Queue for encoding
-    uint64_t frame_num = frame_count_++;
-    {
-        std::lock_guard<std::mutex> lock(queue_mutex_);
-        if (frame_queue_.size() >= MAX_QUEUE_SIZE) {
-            LOGW("Frame queue full at frame %llu", frame_num);
+            LOGW("Frame queue full, dropping frame %llu (queue: %zu)", 
+                 frame_num, frame_queue_.size());
             frame_buffer_->release_buffer(gray_buffer);
             dropped_frames_++;
         } else {
@@ -154,7 +110,7 @@ void FrameProcessor::process_frame(AImage* image) {
 }
 
 void FrameProcessor::encoding_worker() {
-    LOGD("Encoder worker thread started");
+    LOGD("TIFF encoder worker thread started");
 
     while (true) {
         std::unique_lock<std::mutex> lock(queue_mutex_);
@@ -173,21 +129,33 @@ void FrameProcessor::encoding_worker() {
         frame_queue_.pop();
         lock.unlock();
 
-        // Encode to TIFF
+        // Encode Y-plane to 8-bit grayscale TIFF
         bool success = tiff_encoder_->encode_grayscale_tiff(gray_buffer, frame_num);
         if (!success) {
-            LOGW("Failed to encode frame %llu", frame_num);
+            LOGW("Failed to encode frame %llu to TIFF", frame_num);
             error_count_++;
         } else {
-            if (frame_num % 60 == 0) {
-                LOGD("Encoded frame %llu", frame_num);
+            if (frame_num % 60 == 0) {  // Log every 60 frames (~250ms at 240fps)
+                LOGD("✓ Frame %llu → TIFF", frame_num);
             }
         }
 
         frame_buffer_->release_buffer(gray_buffer);
     }
 
-    LOGD("Encoder worker thread stopping");
+    LOGD("TIFF encoder worker thread stopping");
+}
+
+void FrameProcessor::correct_stride(const uint8_t* src, int src_stride,
+                                    uint8_t* dst, int dst_width, int dst_height) {
+    // Samsung sensors may have alignment padding in row pitch
+    // Example: 1920-wide but 2048-byte stride
+    // This copies only the valid width, skipping padding bytes
+    for (int y = 0; y < dst_height; ++y) {
+        std::memcpy(&dst[y * dst_width],
+                    &src[y * src_stride],
+                    dst_width);
+    }
 }
 
 uint64_t FrameProcessor::get_frame_count() const {
@@ -212,24 +180,4 @@ double FrameProcessor::get_avg_processing_time_ms() const {
         sum += t;
     }
     return sum / processing_times_.size();
-}
-
-void FrameProcessor::convert_yuv420_to_grayscale(const uint8_t* src_y,
-                                                 int stride_y,
-                                                 uint8_t* dst_gray,
-                                                 int width, int height) {
-    for (int y = 0; y < height; ++y) {
-        std::memcpy(&dst_gray[y * width],
-                    &src_y[y * stride_y],
-                    width);
-    }
-}
-
-void FrameProcessor::correct_stride(const uint8_t* src, int src_stride,
-                                    uint8_t* dst, int dst_width, int dst_height) {
-    for (int y = 0; y < dst_height; ++y) {
-        std::memcpy(&dst[y * dst_width],
-                    &src[y * src_stride],
-                    dst_width);
-    }
 }

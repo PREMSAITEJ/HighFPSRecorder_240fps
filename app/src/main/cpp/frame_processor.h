@@ -2,24 +2,23 @@
 #define HIGHFPS_FRAME_PROCESSOR_H
 
 #include <cstdint>
-#include <camera2ndk.h>
-#include <media/NdkImage.h>
 #include <atomic>
 #include <vector>
 #include <queue>
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+#include <memory>
 
 class FrameBuffer;
 class TIFFEncoder;
 
 /**
- * High-speed frame processor for 240 FPS capture
- * - Acquires frames from AImageReader at native priority
- * - Converts YUV420 → 8-bit grayscale (Y-plane extraction)
- * - Corrects Samsung memory alignment strides
+ * Raw frame processor for 240 FPS sensor capture
+ * - Accepts Y-plane (luminance) data directly from camera sensor
+ * - Corrects stride for Samsung memory alignment
  * - Queues frames for parallel TIFF encoding
+ * - NO video encoding - pure raw frame output
  */
 class FrameProcessor {
 public:
@@ -31,9 +30,8 @@ public:
     void stop_capturing();
     bool is_capturing() const;
 
-    // Frame handling
-    void on_frame_available(AImage* image);
-    void process_frame(AImage* image);
+    // Raw Y-plane frame handling (direct from camera)
+    void process_raw_yplane(const uint8_t* y_data, int pixel_stride, int row_pitch);
 
     // Statistics
     uint64_t get_frame_count() const;
@@ -42,14 +40,12 @@ public:
     double get_avg_processing_time_ms() const;
 
 private:
-    // Frame processing pipeline
-    void convert_yuv420_to_grayscale(const uint8_t* src_y, int stride_y,
-                                     uint8_t* dst_gray, int width, int height);
-    void correct_stride(const uint8_t* src, int src_stride,
-                       uint8_t* dst, int dst_width, int dst_height);
-
     // Worker threads
     void encoding_worker();
+
+    // Stride correction for sensor alignment
+    void correct_stride(const uint8_t* src, int src_stride,
+                       uint8_t* dst, int dst_width, int dst_height);
 
     // Member variables
     int width_;
@@ -66,11 +62,11 @@ private:
     std::condition_variable queue_cv_;
     std::vector<std::thread> encoder_threads_;
     static constexpr int NUM_ENCODER_THREADS = 4;
-    static constexpr int MAX_QUEUE_SIZE = 60;
+    static constexpr int MAX_QUEUE_SIZE = 60;  // ~250ms buffer at 240fps
 
-    // Timing
+    // Timing statistics
     std::vector<double> processing_times_;
-    std::mutex timing_mutex_;
+    mutable std::mutex timing_mutex_;
 
     // Buffers
     std::unique_ptr<FrameBuffer> frame_buffer_;
