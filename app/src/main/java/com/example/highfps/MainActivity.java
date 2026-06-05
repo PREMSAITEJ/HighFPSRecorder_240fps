@@ -597,3 +597,4 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         super.onDestroy();
     }
 }
+
