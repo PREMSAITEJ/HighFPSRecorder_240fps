@@ -12,7 +12,9 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.TextView;
+import android.view.TextureView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -30,7 +32,7 @@ import java.util.Objects;
  * Captures individual frames directly from camera sensor (no video encoding)
  * Saves as 8-bit grayscale TIFF frames via NDK for PIV analysis
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TextureView.SurfaceTextureListener {
     private static final String TAG = "HighFPS-Raw";
     private static final int CAMERA_PERMISSION_REQUEST = 100;
     private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA};
@@ -38,7 +40,9 @@ public class MainActivity extends AppCompatActivity {
     private CameraManager cameraManager;
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
+    private CameraCaptureSession previewSession;
     private ImageReader imageReader;
+    private ImageReader previewReader;
     private HandlerThread cameraThread;
     private Handler cameraHandler;
     private NativeFrameProcessor nativeProcessor;
@@ -48,12 +52,23 @@ public class MainActivity extends AppCompatActivity {
     private Button btnStartStop;
     private TextView tvStatus;
     private TextView tvStats;
+    private SeekBar focusSeekBar;
+    private SeekBar brightnessSeekBar;
+    private TextView focusValueText;
+    private TextView brightnessValueText;
+    private TextureView textureView;
 
     // Constants
     private static final int PREVIEW_WIDTH = 1920;
     private static final int PREVIEW_HEIGHT = 1080;
     private static final int TARGET_FPS = 240;
     private static final String OUTPUT_FORMAT = "grayscale_tiff";  // Raw frames, not video
+
+    // Camera controls
+    private float currentFocusDistance = 0.0f;
+    private int currentBrightness = 50;
+    private String currentCameraId = null;
+    private CameraCharacteristics cameraCharacteristics = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +92,12 @@ public class MainActivity extends AppCompatActivity {
         btnStartStop = findViewById(R.id.btn_start_stop);
         tvStatus = findViewById(R.id.tv_status);
         tvStats = findViewById(R.id.tv_stats);
+        focusSeekBar = findViewById(R.id.focusSeekBar);
+        brightnessSeekBar = findViewById(R.id.brightnessSeekBar);
+        focusValueText = findViewById(R.id.focusValueText);
+        brightnessValueText = findViewById(R.id.brightnessValueText);
+        textureView = findViewById(R.id.textureView);
+        textureView.setSurfaceTextureListener(this);
 
         btnStartStop.setOnClickListener(v -> {
             if (isRecording) {
@@ -85,6 +106,130 @@ public class MainActivity extends AppCompatActivity {
                 startRawFrameCapture();
             }
         });
+
+        // Focus slider listener
+        focusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && cameraCharacteristics != null) {
+                    float minFocus = cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+                    currentFocusDistance = minFocus * (progress / 100.0f);
+                    focusValueText.setText(String.format("%.2fm", currentFocusDistance));
+                    applyFocusControl();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        // Brightness slider listener
+        brightnessSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    currentBrightness = progress;
+                    brightnessValueText.setText(progress + "%");
+                    applyBrightnessControl();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+    }
+
+    /**
+     * Apply focus control to camera
+     */
+    private void applyFocusControl() {
+        if (captureSession == null && previewSession == null) return;
+
+        try {
+            CameraCaptureSession session = isRecording ? captureSession : previewSession;
+            if (session == null) return;
+
+            CaptureRequest.Builder requestBuilder = cameraDevice.createCaptureRequest(
+                    isRecording ? CameraDevice.TEMPLATE_RECORD : CameraDevice.TEMPLATE_PREVIEW);
+            requestBuilder.addTarget(isRecording ? imageReader.getSurface() : previewReader.getSurface());
+
+            // Set focus mode to manual
+            requestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);
+            requestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, currentFocusDistance);
+
+            if (isRecording) {
+                requestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, 
+                        new Range<>(TARGET_FPS, TARGET_FPS));
+            }
+
+            CaptureRequest request = requestBuilder.build();
+            session.setRepeatingRequest(request, null, cameraHandler);
+
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Error applying focus: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Apply brightness control to camera
+     */
+    private void applyBrightnessControl() {
+        if (captureSession == null && previewSession == null) return;
+
+        try {
+            CameraCaptureSession session = isRecording ? captureSession : previewSession;
+            if (session == null) return;
+
+            CaptureRequest.Builder requestBuilder = cameraDevice.createCaptureRequest(
+                    isRecording ? CameraDevice.TEMPLATE_RECORD : CameraDevice.TEMPLATE_PREVIEW);
+            requestBuilder.addTarget(isRecording ? imageReader.getSurface() : previewReader.getSurface());
+
+            // Map brightness percentage to exposure time
+            long exposureTime = mapBrightnessToExposure(currentBrightness);
+            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
+            requestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
+
+            // Set ISO sensitivity
+            int sensitivity = mapBrightnessToISO(currentBrightness);
+            requestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, sensitivity);
+
+            if (isRecording) {
+                requestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, 
+                        new Range<>(TARGET_FPS, TARGET_FPS));
+            }
+
+            CaptureRequest request = requestBuilder.build();
+            session.setRepeatingRequest(request, null, cameraHandler);
+
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Error applying brightness: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Map brightness percentage to exposure time
+     */
+    private long mapBrightnessToExposure(int brightness) {
+        // Range from 100μs to 16ms based on brightness
+        long minExposure = 100_000L;  // 100 microseconds
+        long maxExposure = 16_000_000L;  // 16 milliseconds
+        return minExposure + (maxExposure - minExposure) * brightness / 100;
+    }
+
+    /**
+     * Map brightness percentage to ISO sensitivity
+     */
+    private int mapBrightnessToISO(int brightness) {
+        // Range from 50 to 3200 ISO
+        int minISO = 50;
+        int maxISO = 3200;
+        return minISO + (maxISO - minISO) * brightness / 100;
     }
 
     /**
@@ -94,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
      * - Native C++ processing for speed
      */
     private void startRawFrameCapture() {
-        if (captureSession == null) {
+        if (captureSession == null && previewSession == null) {
             Log.e(TAG, "Capture session not ready");
             return;
         }
@@ -126,10 +271,17 @@ public class MainActivity extends AppCompatActivity {
             // Force 240 FPS
             requestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, 
                     new Range<>(TARGET_FPS, TARGET_FPS));
-            // Manual exposure for consistency
+
+            // Apply current focus and brightness settings
+            requestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);
+            requestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, currentFocusDistance);
+
+            long exposureTime = mapBrightnessToExposure(currentBrightness);
+            int sensitivity = mapBrightnessToISO(currentBrightness);
+
             requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
-            requestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, 1_000_000L);  // 1ms
-            requestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 100);
+            requestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
+            requestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, sensitivity);
 
             CaptureRequest request = requestBuilder.build();
             captureSession.setRepeatingRequest(request, null, cameraHandler);
@@ -174,6 +326,11 @@ public class MainActivity extends AppCompatActivity {
 
             isRecording = false;
 
+            // Resume preview
+            if (previewSession != null) {
+                startPreview();
+            }
+
         } catch (CameraAccessException e) {
             Log.e(TAG, "Error stopping capture: " + e.getMessage());
         }
@@ -184,16 +341,16 @@ public class MainActivity extends AppCompatActivity {
      */
     private void startCamera() {
         try {
-            String cameraId = selectCamera();
-            if (cameraId == null) {
+            currentCameraId = selectCamera();
+            if (currentCameraId == null) {
                 updateUI("ERROR: No camera found");
                 return;
             }
 
-            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+            cameraCharacteristics = cameraManager.getCameraCharacteristics(currentCameraId);
             
             // Check 240 FPS capability
-            int[] availableFps = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+            int[] availableFps = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
             if (availableFps == null) {
                 updateUI("ERROR: No FPS ranges available");
                 return;
@@ -220,13 +377,22 @@ public class MainActivity extends AppCompatActivity {
             );
             imageReader.setOnImageAvailableListener(this::onRawFrameAvailable, cameraHandler);
 
+            // Create ImageReader for preview
+            previewReader = ImageReader.newInstance(
+                    PREVIEW_WIDTH,
+                    PREVIEW_HEIGHT,
+                    android.graphics.ImageFormat.YUV_420_888,
+                    2
+            );
+            previewReader.setOnImageAvailableListener(this::onPreviewFrameAvailable, cameraHandler);
+
             // Open camera
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
                     != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
 
-            cameraManager.openCamera(cameraId, new CameraDevice.StateCallback() {
+            cameraManager.openCamera(currentCameraId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
                     MainActivity.this.cameraDevice = camera;
@@ -261,12 +427,12 @@ public class MainActivity extends AppCompatActivity {
     private void createCaptureSession() {
         try {
             cameraDevice.createCaptureSession(
-                    Arrays.asList(imageReader.getSurface()),
+                    Arrays.asList(imageReader.getSurface(), previewReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession session) {
                             MainActivity.this.captureSession = session;
-                            updateUI("Capture session ready.\nPress START to begin raw frame capture.");
+                            startPreview();
                         }
 
                         @Override
@@ -279,6 +445,34 @@ public class MainActivity extends AppCompatActivity {
             );
         } catch (CameraAccessException e) {
             Log.e(TAG, "Failed to create capture session: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Start preview on TextureView
+     */
+    private void startPreview() {
+        try {
+            CaptureRequest.Builder previewBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            previewBuilder.addTarget(previewReader.getSurface());
+
+            // Apply current settings
+            previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);
+            previewBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, currentFocusDistance);
+
+            long exposureTime = mapBrightnessToExposure(currentBrightness);
+            int sensitivity = mapBrightnessToISO(currentBrightness);
+
+            previewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
+            previewBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
+            previewBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, sensitivity);
+
+            CaptureRequest previewRequest = previewBuilder.build();
+            captureSession.setRepeatingRequest(previewRequest, null, cameraHandler);
+            updateUI("Capture session ready.\nPress START to begin raw frame capture.");
+
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Failed to start preview: " + e.getMessage());
         }
     }
 
@@ -305,6 +499,16 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "Frame processing error: " + e.getMessage());
         } finally {
+            image.close();
+        }
+    }
+
+    /**
+     * Callback when preview frame is available
+     */
+    private void onPreviewFrameAvailable(ImageReader reader) {
+        Image image = reader.acquireLatestImage();
+        if (image != null) {
             image.close();
         }
     }
@@ -360,6 +564,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+        Log.d(TAG, "SurfaceTexture available");
+    }
+
+    @Override
+    public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {}
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureFrameAvailable(@NonNull SurfaceTexture surface) {}
+
+    @Override
     protected void onDestroy() {
         stopRawFrameCapture();
         if (cameraDevice != null) {
@@ -367,6 +587,9 @@ public class MainActivity extends AppCompatActivity {
         }
         if (imageReader != null) {
             imageReader.close();
+        }
+        if (previewReader != null) {
+            previewReader.close();
         }
         if (cameraThread != null) {
             cameraThread.quitSafely();
